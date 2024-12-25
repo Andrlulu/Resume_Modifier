@@ -1,0 +1,22 @@
+# created by virtualenv automatically
+# Python
+*.pyc
+__pycache__/
+
+
+# Virtual environments
+.venv/bin
+.venv/
+
+# PyCharm specific
+.idea/
+*.iml
+
+# Docker
+docker-compose.override.yml
+
+# MacOS specific
+.DS_Store
+
+# If you’re using Docker, you may ignore build artifacts
+*.log
