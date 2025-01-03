@@ -22,3 +22,11 @@ docker-compose.override.yml
 
 # If you’re using Docker, you may ignore build artifacts
 *.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Keep example file
+!.env.example

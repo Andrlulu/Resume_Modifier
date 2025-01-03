@@ -1,0 +1,1 @@
+# Makes response_template a package 
