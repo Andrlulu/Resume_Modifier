@@ -1,5 +1,5 @@
 import io
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 
 def parse_pdf_file(pdf_file):
     """

@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_APP=run.py \
+    FLASK_APP=app.server \
     FLASK_ENV=development \
     FLASK_DEBUG=1
 
@@ -29,4 +29,4 @@ COPY . .
 EXPOSE 5000
 
 # Run the Flask app in development mode with hot reload
-CMD ["python", "run.py"]
+CMD ["python", "-m", "app.server"]
