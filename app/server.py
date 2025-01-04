@@ -34,9 +34,8 @@ def upload_pdf():
         result = resume_processor.process(job_description if job_description else None)
         
         return jsonify({
-            "status": "success",
-            "result": result,
-            "text_length": len(extracted_text)
+            "status": 200,
+            "data": result
         }), 200
     
     except Exception as e:
