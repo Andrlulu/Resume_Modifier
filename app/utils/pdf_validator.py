@@ -1,6 +1,6 @@
 from flask import Request
 
-class UploadValidator:
+class PDFValidator:
     @staticmethod
     def validate_upload_request(request: Request):
         """Validate PDF upload request"""
@@ -15,8 +15,4 @@ class UploadValidator:
         if request.files['file'].filename == '':
             return ("No file selected for uploading", 400)       
         
-        # Check file type
-        if not request.files['file'].filename.lower().endswith('.pdf'):
-            return ("Uploaded file must be a PDF.", 400)
-        
-        return (None, None)
+        return (None, None) 
