@@ -12,7 +12,7 @@ load_dotenv()
 
 # Then create app and set secret key
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins=["http://18.191.233.138:3001"])
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key')
 
 @app.route('/')
