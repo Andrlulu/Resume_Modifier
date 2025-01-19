@@ -3,16 +3,15 @@ name: Deploy to AWS ECR
 on:
   workflow_dispatch:
 
+# Define environment variables  
+env:  
+  ECR_REPOSITORY: editor-backend
+  AWS_REGION: us-east-2
+  ECR_URL: ${{secrets.AWS_ACCOUNT_ID}}.dkr.ecr.us-east-2.amazonaws.com
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-
-    # Define environment variables
-    env:  
-      ECR_REPOSITORY: resume_modifier_market_backend
-      AWS_REGION: us-east-2
-      ECR_URL: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-
     steps:
     # Checkout the repository
     - name: Checkout code
@@ -22,9 +21,9 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+        aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+        aws-region: ${{env.AWS_REGION}}
 
     # Log in to Amazon ECR
     - name: Log in to Amazon ECR
@@ -34,14 +33,14 @@ jobs:
     # Build the Docker image
     - name: Build Docker image
       run: |
-        docker build -f Dockerfile.server -t ${{ env.ECR_URL }}/${{ env.ECR_REPOSITORY }}:latest .
+        docker build -f Dockerfile -t ${{env.ECR_REPOSITORY}}:latest .
 
     # Tag the Docker image
     - name: Tag Docker image
       run: |
-        docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_URL }}/${{ env.ECR_REPOSITORY }}:latest
+        docker tag ${{env.ECR_REPOSITORY}}:latest ${{env.ECR_URL}}/${{env.ECR_REPOSITORY}}:latest
 
     # Push the Docker image to ECR
     - name: Push to Amazon ECR
       run: |
-        docker push ${{ env.ECR_URL }}/${{ env.ECR_REPOSITORY }}:latest
+        docker push ${{env.ECR_URL}}/${{env.ECR_REPOSITORY}}:latest
