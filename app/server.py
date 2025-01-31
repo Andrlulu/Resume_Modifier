@@ -6,6 +6,7 @@ from app.utils.pdf_validator import PDFValidator
 from app.utils.job_validator import JobValidator
 from app.utils.parse_pdf import parse_pdf_file
 from app.services.resume_ai import ResumeAI
+from app.response_template.resume_schema import RESUME_TEMPLATE
 
 # Load environment variables first
 load_dotenv()
@@ -89,6 +90,61 @@ def analyze_with_job():
     except Exception as e:
         return jsonify({
             "error": "Analysis failed",
+            "details": str(e)
+        }), 500
+
+@app.route('/api/feedback', methods=['PUT'])
+def process_feedback():
+    """Process feedback and updated resume data."""
+    try:
+        # Validate content type
+        if request.content_type != 'application/json':
+            return jsonify({
+                "error": "Content-Type must be application/json"
+            }), 400
+
+        # Get JSON data directly from request
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "error": "Missing request body"
+            }), 400
+
+        # Extract fields from data
+        section = data.get('section')
+        feedback = data.get('feedback', '')
+        updated_resume = data.get('updated_resume')
+
+        # Validate required fields
+        if not section:
+            return jsonify({
+                "error": "Section is required"
+            }), 400
+
+        if not updated_resume:
+            return jsonify({
+                "error": "Updated resume is required"
+            }), 400
+
+        # Create ResumeAI instance with updated resume
+        resume_processor = ResumeAI(session.get('extracted_text', ''))
+        resume_processor.parsed_resume = updated_resume
+
+        # Process feedback for the specific section
+        analysis = resume_processor.process_section_feedback(
+            section=section.get('section type'),
+            subsection_data=section,  # Pass the entire section data
+            feedback=feedback
+        )
+
+        return jsonify({
+            "status": 200,
+            "data": analysis
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "error": "Failed to process feedback",
             "details": str(e)
         }), 500
 

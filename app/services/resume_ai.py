@@ -36,7 +36,7 @@ class ResumeAI:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", 
                      "content": "You are a precise resume parser that extracts structured data."},
@@ -84,7 +84,7 @@ class ResumeAI:
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an expert resume analyst."},
                     {"role": "user", "content": prompt}
@@ -124,4 +124,40 @@ class ResumeAI:
             return result
             
         except Exception as e:
-            raise Exception(f"Resume processing failed: {str(e)}") 
+            raise Exception(f"Resume processing failed: {str(e)}")
+
+    def process_section_feedback(self, section: str, subsection_data: dict, feedback: str = "") -> dict:
+        """Process feedback and generate improved content for a specific section"""
+        prompt = f"""
+        Improve this resume section based on the feedback.
+        
+        Section Type: {section}
+        Current Content: {json.dumps(subsection_data, indent=2)}
+        User Feedback: {feedback if feedback else "Make this content more impactful and professional"}
+        
+        Please rewrite the content to address the feedback and improve its impact.
+        If it's a description field, maintain bullet point format.
+        Focus on being specific, quantifiable, and achievement-oriented.
+        
+        Return only the improved content in this JSON format:
+        {{
+            "Content": "improved content here"
+        }}
+        """
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an expert resume writer."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            cleaned_content = content.replace("```json", "").replace("```", "").strip()
+            return json.loads(cleaned_content)
+            
+        except Exception as e:
+            raise Exception(f"Failed to process section feedback: {str(e)}") 

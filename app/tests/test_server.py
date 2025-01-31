@@ -91,4 +91,56 @@ def test_job_description_upload(client):
     analysis = json_data['data']
     assert 'overallAnalysis' in analysis
     assert 'workExperience' in analysis
-    assert analysis['workExperience'][0]['companyName'] == 'Springfield Inn' 
+    assert analysis['workExperience'][0]['companyName'] == 'Springfield Inn'
+
+def test_process_feedback(client):
+    """Test processing feedback for a specific section"""
+    # First upload a resume to establish session
+    test_file = os.path.join(os.path.dirname(__file__), 'test_data/sample_resume.pdf')
+    with open(test_file, 'rb') as pdf:
+        data = {}
+        data['file'] = (pdf, 'sample_resume.pdf')
+        client.post('/api/pdfupload', data=data, content_type='multipart/form-data')
+    
+    # Test data for feedback request
+    feedback_data = {
+        "section": {
+            "section type": "workExperience",
+            "companyName": "Springfield Inn",
+            "jobTitle": "Night Auditor",
+            "description": "• Managed end-of-day operations and financial reporting"
+        },
+        "feedback": "Need more emphasis on leadership skills",
+        "updated_resume": {
+            "workExperience": [
+                {
+                    "companyName": "Springfield Inn",
+                    "jobTitle": "Night Auditor",
+                    "description": "• Managed end-of-day operations and financial reporting"
+                }
+            ]
+        }
+    }
+    
+    # Make feedback request
+    response = client.put(
+        '/api/feedback',
+        json=feedback_data,
+        content_type='application/json'
+    )
+    
+    # Print response for debugging
+    print("\nFeedback Response Status:", response.status_code)
+    print("Feedback Response:", response.get_json())
+    
+    # Test response
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data['status'] == 200
+    assert 'data' in json_data
+    
+    # Test content structure
+    data = json_data['data']
+    assert 'Content' in data
+    assert isinstance(data['Content'], str)
+    assert len(data['Content']) > 0 
