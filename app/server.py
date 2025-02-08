@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from app.extensions import db, login_manager
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 import os
 import jwt
 from dotenv import load_dotenv
@@ -9,6 +12,7 @@ from app.utils.parse_pdf import parse_pdf_file
 from app.services.resume_ai import ResumeAI
 from app.response_template.resume_schema import RESUME_TEMPLATE
 import time
+from app.models.user import User
 
 # Load environment variables first
 load_dotenv()
@@ -17,6 +21,15 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["http://18.191.233.138:3001"])
 JWT_SECRET = os.getenv('JWT_SECRET_KEY', 'dev-secret-key')
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost/resume_app')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')  # for session management
+
+# Initialize SQLAlchemy and LoginManager
+db.init_app(app)
+login_manager.init_app(app)
 
 def create_token(data: dict) -> str:
     """Create JWT token with resume data"""
@@ -198,6 +211,67 @@ def process_feedback():
             "error": "Failed to process feedback",
             "details": str(e)
         }), 500
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    
+    # Validate input
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({"error": "Email and password required"}), 400
+        
+    # Check if user already exists
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({"error": "Email already registered"}), 400
+    
+    # Create new user
+    user = User(email=data['email'])
+    user.set_password(data['password'])
+    
+    try:
+        db.session.add(user)
+        db.session.commit()
+        
+        # Create JWT token
+        token = create_token({
+            'user_id': user.id,
+            'email': user.email
+        })
+        
+        return jsonify({
+            "status": 201,
+            "token": token,
+            "user": {"email": user.email}
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Registration failed"}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    
+    # Validate input
+    if not data or 'email' not in data or 'password' not in data:
+        return jsonify({"error": "Email and password required"}), 400
+        
+    # Find user by email
+    user = User.query.filter_by(email=data['email']).first()
+    if not user or not user.check_password(data['password']):
+        return jsonify({"error": "Invalid email or password"}), 401
+    
+    # Create JWT token
+    token = create_token({
+        'user_id': user.id,
+        'email': user.email
+    })
+    
+    return jsonify({
+        "status": "success",
+        "token": token,
+        "user": {"email": user.email}
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
