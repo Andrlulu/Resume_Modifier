@@ -3,16 +3,47 @@ from app.server import app
 import os
 from dotenv import load_dotenv
 import io
+from app.extensions import db
+from app.models.user import User
+from sqlalchemy import text
 
 load_dotenv()  # Load environment variables for tests too
 
 @pytest.fixture
 def client():
+    """Test client fixture for Flask app"""
     app.config['TESTING'] = True
-    # Use the same secret key from environment
-    app.secret_key = os.getenv('FLASK_SECRET_KEY')
     with app.test_client() as client:
-        yield client
+        with app.app_context():
+            yield client
+
+@pytest.fixture(autouse=True)
+def setup_test_database():
+    """Setup/cleanup for tests without affecting production data"""
+    with app.app_context():
+        # First clean up any existing test data
+        try:
+            # Delete resumes first (due to foreign key constraint)
+            db.session.execute(text('DELETE FROM resumes WHERE user_id IN (SELECT id FROM users WHERE email LIKE \'%@example.com\')'))
+            # Then delete test users
+            db.session.execute(text('DELETE FROM users WHERE email LIKE \'%@example.com\''))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Cleanup error: {e}")
+
+        yield  # Run the test
+
+        # Clean up after test
+        try:
+            # Delete resumes first (due to foreign key constraint)
+            db.session.execute(text('DELETE FROM resumes WHERE user_id IN (SELECT id FROM users WHERE email LIKE \'%@example.com\')'))
+            # Then delete test users
+            db.session.execute(text('DELETE FROM users WHERE email LIKE \'%@example.com\''))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Cleanup error: {e}")
 
 def test_pdf_upload(client):
     """Test PDF upload and parsing"""
@@ -141,4 +172,79 @@ def test_process_feedback(client):
     data = json_data['data']
     assert 'Content' in data
     assert isinstance(data['Content'], str)
-    assert len(data['Content']) > 0 
+    assert len(data['Content']) > 0
+
+def test_register(client):
+    """Test user registration"""
+    # Test data
+    user_data = {
+        "email": "test_register@example.com",
+        "password": "testpassword123"
+    }
+    
+    # Make register request
+    response = client.post(
+        '/api/register',
+        json=user_data,
+        content_type='application/json'
+    )
+    
+    # Print response for debugging
+    print("\nRegister Response Status:", response.status_code)
+    print("Register Response:", response.get_json())
+    
+    # Test response
+    assert response.status_code == 201
+    json_data = response.get_json()
+    assert json_data['status'] == 201
+    assert 'user' in json_data
+    assert json_data['user']['email'] == user_data['email']
+
+def test_login(client):
+    """Test user login"""
+    # First register a user
+    user_data = {
+        "email": "test_login@example.com",
+        "password": "testpassword123"
+    }
+    register_response = client.post('/api/register', json=user_data, content_type='application/json')
+    assert register_response.status_code == 201
+    
+    # Test login
+    response = client.post(
+        '/api/login',
+        json=user_data,
+        content_type='application/json'
+    )
+    
+    # Print response for debugging
+    print("\nLogin Response Status:", response.status_code)
+    print("Login Response:", response.get_json())
+    
+    # Test response
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data['status'] == "success"
+    assert 'user' in json_data
+    assert json_data['user']['email'] == user_data['email']
+
+def test_invalid_login(client):
+    """Test login with invalid credentials"""
+    # Test data
+    user_data = {
+        "email": "wrong@example.com",
+        "password": "wrongpassword"
+    }
+    
+    # Make login request
+    response = client.post(
+        '/api/login',
+        json=user_data,
+        content_type='application/json'
+    )
+    
+    # Test response
+    assert response.status_code == 401
+    json_data = response.get_json()
+    assert 'error' in json_data
+    assert json_data['error'] == "Invalid email or password" 
