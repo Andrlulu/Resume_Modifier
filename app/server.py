@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from app.extensions import db, login_manager
 from flask_sqlalchemy import SQLAlchemy
@@ -24,7 +24,6 @@ CORS(app, supports_credentials=True, origins=["http://18.191.233.138:3001"])
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost/resume_app')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')  # for session management
 
 # Initialize SQLAlchemy and LoginManager
 db.init_app(app)
