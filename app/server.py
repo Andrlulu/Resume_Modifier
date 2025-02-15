@@ -10,9 +10,9 @@ from app.utils.job_validator import JobValidator
 from app.utils.parse_pdf import parse_pdf_file
 from app.services.resume_ai import ResumeAI
 from app.response_template.resume_schema import RESUME_TEMPLATE
-import time
 from app.models.user import User
 from app.utils.feedback_validator import FeedbackValidator
+from app.utils.jwt_utils import generate_token, token_required
 
 # Load environment variables first
 load_dotenv()
@@ -34,8 +34,12 @@ def index():
     return "Flask App is Running!"
 
 @app.route('/api/pdfupload', methods=['POST'])
+@token_required
 def upload_pdf():
     """Upload PDF and process resume"""
+    # Now we can access user info from request.user
+    user_id = request.user.get('user_id')
+    
     # Validate request
     error, status_code = PDFValidator.validate_upload_request(request)
     if error:
@@ -64,8 +68,12 @@ def upload_pdf():
         }), 500
 
 @app.route('/api/job_description_upload', methods=['POST'])
+@token_required
 def analyze_with_job():
     """Analyze resume with job description"""
+    # Get user ID from token
+    user_id = request.user.get('user_id')
+    
     # Validate request
     error, status_code, data = JobValidator.validate_request(request)
     if error:
@@ -89,8 +97,12 @@ def analyze_with_job():
         }), 500
 
 @app.route('/api/feedback', methods=['PUT'])
+@token_required
 def process_feedback():
     """Process feedback and updated resume data."""
+    # Get user ID from token
+    user_id = request.user.get('user_id')
+    
     # Validate request
     error, status_code, data = FeedbackValidator.validate_request(request)
     if error:
@@ -166,9 +178,13 @@ def login():
     if not user or not user.check_password(data['password']):
         return jsonify({"error": "Invalid email or password"}), 401
     
+    # Generate token
+    token = generate_token(user.id, user.email)
+    
     return jsonify({
         "status": "success",
-        "user": {"email": user.email}
+        "user": {"email": user.email},
+        "token": token
     }), 200
 
 if __name__ == '__main__':
