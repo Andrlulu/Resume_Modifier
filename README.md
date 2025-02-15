@@ -10,7 +10,7 @@ Resume Modifier is a web service that helps users optimize their resumes for spe
 - Stores data in a persistent PostgreSQL database
 
 ## API Documentation
-Detailed API documentation is available [here](https://docs.google.com/document/d/1y-apfWolpNhmUbpuSNJat0SojwjjA9y4M3c6vH9FCoo/edit?tab=t.tkal3mjpe26u)
+Detailed API documentation is available [here](https://docs.google.com/document/d/1y-apfWolpNhmUbpuSNJat0SojwjjA9y4M3c6vH9FCoo/edit?usp=sharing)
 
 ## Setup
 1. Clone the repository
@@ -92,4 +92,4 @@ Note:
 - Make sure you have Docker and Docker Compose installed
 - All authenticated endpoints require a JWT token in the Authorization header: `Bearer <token>`
 - Database data persists in Docker volume between restarts
-- See the [API Documentation](https://docs.google.com/document/d/1y-apfWolpNhmUbpuSNJat0SojwjjA9y4M3c6vH9FCoo/edit?tab=t.tkal3mjpe26u) for detailed request/response formats and examples 
+- See the [API Documentation](https://docs.google.com/document/d/1y-apfWolpNhmUbpuSNJat0SojwjjA9y4M3c6vH9FCoo/edit?usp=sharing) for detailed request/response formats and examples 
