@@ -50,36 +50,34 @@ def test_pdf_upload(client):
 
 def test_job_description_upload(client):
     """Test job description analysis"""
-    # First upload a resume - Use PDF file like in first test
+    # First get parsed resume data
     test_file = os.path.join(os.path.dirname(__file__), 'test_data/sample_resume.pdf')
     
     with open(test_file, 'rb') as pdf:
         data = {}
         data['file'] = (pdf, 'sample_resume.pdf')
-        client.post('/api/pdfupload', data=data, content_type='multipart/form-data')
+        response = client.post('/api/pdfupload', 
+                             data=data, 
+                             content_type='multipart/form-data')
+        parsed_resume = response.get_json()['data']
     
-    # Now upload job description
-    job_text = """
-    Night Auditor Position
-    Requirements:
-    - Bachelor's degree in Accounting or Business Administration
-    - Experience with financial reporting and auditing
-    - Ability to work independently during night shifts
-    """
-    job_content = io.BytesIO(job_text.encode('utf-8'))
-    
-    data = {}
-    data['file'] = (job_content, 'job.txt')
+    # Now test job description analysis
+    job_data = {
+        "updated_resume": parsed_resume,
+        "job_description": """
+        Night Auditor Position
+        Requirements:
+        - Bachelor's degree in Accounting or Business Administration
+        - Experience with financial reporting and auditing
+        - Ability to work independently during night shifts
+        """
+    }
     
     response = client.post(
         '/api/job_description_upload',
-        data=data,
-        content_type='multipart/form-data'
+        json=job_data,
+        content_type='application/json'
     )
-    
-    # Print response for debugging
-    print("\nJob Analysis Status Code:", response.status_code)
-    print("Job Analysis Response:", response.get_json())
     
     # Check response
     assert response.status_code == 200
