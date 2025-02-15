@@ -1,31 +1,28 @@
-# Use the official Python image as the base
+# Use Python 3.11 slim image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    FLASK_APP=app.server \
-    FLASK_ENV=development \
-    FLASK_DEBUG=1
-
-# Set work directory
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
+# Install system dependencies including netcat for database check
+RUN apt-get update && apt-get install -y \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy the rest of the application
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 5000
+# Copy the entrypoint script
+COPY app/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Run the Flask app in development mode with hot reload
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Use the entrypoint script
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["python", "-m", "app.server"]

@@ -7,6 +7,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
+    
+    # Define relationship without backref
+    resumes = db.relationship('Resume', back_populates='user_ref')
+    job_descriptions = db.relationship('JobDescription', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

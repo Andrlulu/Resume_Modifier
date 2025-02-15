@@ -10,7 +10,7 @@ from app.utils.job_validator import JobValidator
 from app.utils.parse_pdf import parse_pdf_file
 from app.services.resume_ai import ResumeAI
 from app.response_template.resume_schema import RESUME_TEMPLATE
-from app.models.user import User
+from app.models import User, Resume, JobDescription, ResumeAnalysis
 from app.utils.feedback_validator import FeedbackValidator
 from app.utils.jwt_utils import generate_token, token_required
 

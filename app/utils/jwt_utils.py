@@ -1,4 +1,4 @@
-import jwt
+import jwt  # This is PyJWT
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
