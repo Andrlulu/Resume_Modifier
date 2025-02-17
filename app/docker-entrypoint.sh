@@ -3,8 +3,8 @@ set -e
 
 # Wait for Postgres to be ready
 echo "Waiting for postgres..."
-while ! nc -z db 5432; do
-  sleep 0.1
+while ! nc -z $DB_HOST 5432; do
+  sleep 1
 done
 echo "PostgreSQL started"
 
