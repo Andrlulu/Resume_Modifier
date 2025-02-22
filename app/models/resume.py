@@ -10,5 +10,10 @@ class Resume(db.Model):
     parsed_resume = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     
+    # Add unique constraint for user_id and title combination
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'title', name='unique_user_resume_title'),
+    )
+    
     # Define the back_populates relationship
     user_ref = db.relationship('User', back_populates='resumes') 
