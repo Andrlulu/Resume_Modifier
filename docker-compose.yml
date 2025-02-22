@@ -12,6 +12,7 @@ services:
       - FLASK_APP=app.server
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - DB_HOST=db
     depends_on:
       - db
     volumes:
