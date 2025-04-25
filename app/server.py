@@ -20,7 +20,8 @@ load_dotenv()
 
 # Then create app and set secret key
 app = Flask(__name__)
-CORS(app, supports_credentials=True, origins=["http://18.191.233.138:3001"])
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost/resume_app')
