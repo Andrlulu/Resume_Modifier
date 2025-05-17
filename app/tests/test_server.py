@@ -1,10 +1,10 @@
 import pytest
-from app.server import app
+from app import create_app
 import os
 from dotenv import load_dotenv
 import io
 from app.extensions import db
-from app.models.user import User
+from app.models.temp import User, Resume
 from sqlalchemy import text
 
 load_dotenv()  # Load environment variables for tests too
@@ -12,6 +12,7 @@ load_dotenv()  # Load environment variables for tests too
 @pytest.fixture
 def client():
     """Test client fixture for Flask app"""
+    app = create_app()
     app.config['TESTING'] = True
     with app.test_client() as client:
         with app.app_context():
@@ -20,6 +21,7 @@ def client():
 @pytest.fixture(autouse=True)
 def setup_test_database():
     """Setup/cleanup for tests without affecting production data"""
+    app = create_app()
     with app.app_context():
         # First clean up any existing test data
         try:
@@ -247,4 +249,53 @@ def test_invalid_login(client):
     assert response.status_code == 401
     json_data = response.get_json()
     assert 'error' in json_data
-    assert json_data['error'] == "Invalid email or password" 
+    assert json_data['error'] == "Invalid email or password"
+
+def test_save_resume(client):
+    """Test saving a resume for a user"""
+    # First register a test user
+    user_data = {
+        "email": "test_save_resume@example.com",
+        "password": "testpassword123"
+    }
+    register_response = client.post('/api/register', json=user_data, content_type='application/json')
+    assert register_response.status_code == 201
+    
+    # Login to get token
+    login_response = client.post('/api/login', json=user_data, content_type='application/json')
+    assert login_response.status_code == 200
+    token = login_response.get_json()['token']
+    
+    # Test data for resume
+    resume_data = {
+        "resume_title": "My Test Resume",
+        "updated_resume": {
+            "userInfo": {
+                "firstName": "Test",
+                "lastName": "User",
+                "email": "test@example.com"
+            },
+            "workExperience": [
+                {
+                    "companyName": "Test Company",
+                    "jobTitle": "Test Position",
+                    "description": "Test description"
+                }
+            ]
+        },
+        "template": 1  # Template field is in the request JSON, not as a separate parameter
+    }
+    
+    # Make request with authentication
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.put(
+        '/api/save_resume',
+        json=resume_data,
+        content_type='application/json',
+        headers=headers
+    )
+    
+    # Test response
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data['status'] == 200 
