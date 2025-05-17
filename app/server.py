@@ -1,41 +1,24 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from app.extensions import db, login_manager
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-import os
-from dotenv import load_dotenv
+from flask import Blueprint, request, jsonify
+from app.extensions import db
 from app.utils.pdf_validator import PDFValidator
 from app.utils.job_validator import JobValidator
 from app.utils.parse_pdf import parse_pdf_file
 from app.services.resume_ai import ResumeAI
 from app.response_template.resume_schema import RESUME_TEMPLATE
-from app.models import User, Resume, JobDescription, ResumeAnalysis
+from app.models.temp import User, Resume, JobDescription
 from app.utils.feedback_validator import FeedbackValidator
 from app.utils.jwt_utils import generate_token, token_required
 from app.utils.profile_validator import ProfileValidator
+import datetime
 
-# Load environment variables first
-load_dotenv()
+# Create blueprint
+api = Blueprint('api', __name__)
 
-# Then create app and set secret key
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-
-
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost/resume_app')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy and LoginManager
-db.init_app(app)
-login_manager.init_app(app)
-
-@app.route('/')
+@api.route('/')
 def index():
     return "Flask App is Running!"
 
-@app.route('/api/pdfupload', methods=['POST'])
+@api.route('/api/pdfupload', methods=['POST'])
 @token_required
 def upload_pdf():
     """Upload PDF and process resume"""
@@ -69,7 +52,7 @@ def upload_pdf():
             "details": str(e)
         }), 500
 
-@app.route('/api/job_description_upload', methods=['POST'])
+@api.route('/api/job_description_upload', methods=['POST'])
 @token_required
 def analyze_with_job():
     """Analyze resume with job description"""
@@ -98,7 +81,7 @@ def analyze_with_job():
             "details": str(e)
         }), 500
 
-@app.route('/api/feedback', methods=['PUT'])
+@api.route('/api/feedback', methods=['PUT'])
 @token_required
 def process_feedback():
     """Process feedback and updated resume data."""
@@ -138,7 +121,7 @@ def process_feedback():
             "details": str(e)
         }), 500
 
-@app.route('/api/register', methods=['POST'])
+@api.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     
@@ -151,7 +134,12 @@ def register():
         return jsonify({"error": "Email already registered"}), 400
     
     # Create new user
-    user = User(email=data['email'])
+    user = User(
+        email=data['email'],
+        username=data['email'],  # Use email as username if not provided
+        updated_at=datetime.datetime.utcnow(),
+        created_at=datetime.datetime.utcnow()
+    )
     user.set_password(data['password'])
     
     try:
@@ -167,7 +155,7 @@ def register():
         db.session.rollback()
         return jsonify({"error": "Registration failed"}), 500
 
-@app.route('/api/login', methods=['POST'])
+@api.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     
@@ -189,7 +177,7 @@ def login():
         "token": token
     }), 200
 
-@app.route('/api/save_resume', methods=['PUT'])
+@api.route('/api/save_resume', methods=['PUT'])
 @token_required
 def save_resume():
     """Save or update a resume for the user"""
@@ -206,6 +194,11 @@ def save_resume():
     if not resume_title:
         return jsonify({"error": "Resume title is required"}), 400
     
+    # Get template ID (required field)
+    # template = data.get('template')
+    # if template is None:
+    #     return jsonify({"error": "Template ID is required"}), 400
+    
     resume_data = data['updated_resume']
     
     try:
@@ -218,13 +211,24 @@ def save_resume():
         if existing_resume:
             # Update existing resume
             existing_resume.parsed_resume = resume_data
+            # existing_resume.template = template
+            existing_resume.template = 1
             db.session.commit()
         else:
             # Create new resume entry
+            # Get the next serial number for this user
+            existing_count = Resume.query.filter_by(user_id=user_id).count()
+            now = datetime.datetime.now(datetime.UTC)  # Using timezone-aware datetime
+            
             resume = Resume(
                 user_id=user_id,
+                serial_number=existing_count + 1,  # Increment from existing count
                 title=resume_title,
-                parsed_resume=resume_data
+                parsed_resume=resume_data,
+                # template=template,
+                template=1,
+                updated_at=now,
+                created_at=now
             )
             db.session.add(resume)
             db.session.commit()
@@ -240,7 +244,7 @@ def save_resume():
             "details": str(e)
         }), 500
 
-@app.route('/api/get_resume_list', methods=['GET'])
+@api.route('/api/get_resume_list', methods=['GET'])
 @token_required
 def get_resume_list():
     """Get list of resumes for the current user"""
@@ -268,7 +272,7 @@ def get_resume_list():
             "details": str(e)
         }), 500
 
-@app.route('/api/get_resume/<int:resume_id>', methods=['GET'])
+@api.route('/api/get_resume/<int:resume_id>', methods=['GET'])
 @token_required
 def get_resume(resume_id):
     """Get a specific resume by ID"""
@@ -277,7 +281,7 @@ def get_resume(resume_id):
     try:
         # Query resume and verify ownership
         resume = Resume.query.filter_by(
-            id=resume_id,
+            serial_number=resume_id,
             user_id=user_id
         ).first()
         
@@ -300,7 +304,7 @@ def get_resume(resume_id):
             "details": str(e)
         }), 500
 
-@app.route('/api/put_profile', methods=['PUT'])
+@api.route('/api/put_profile', methods=['PUT'])
 @token_required
 def put_profile():
     """Update user profile"""
@@ -338,7 +342,7 @@ def put_profile():
         }), 500
     
 
-@app.route('/api/get_profile', methods=['GET'])
+@api.route('/api/get_profile', methods=['GET'])
 @token_required
 def get_profile():
     """Get user profile"""
@@ -368,7 +372,3 @@ def get_profile():
             "error": "Failed to fetch profile",
             "details": str(e)
         }), 500
-    
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
