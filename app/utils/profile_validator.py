@@ -1,5 +1,5 @@
 from flask import Request, jsonify
-from app.models.user import User
+from app.models.temp import User
 
 class ProfileValidator:
     @staticmethod
