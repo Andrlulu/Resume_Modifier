@@ -39,7 +39,7 @@ RESUME_TEMPLATE = {
   ],
   "skills": [],
   "achievements": [],
-  "project": [
+  "projects": [
     # Just one example entry
     {
       "title": "",
@@ -52,7 +52,7 @@ RESUME_TEMPLATE = {
       "description": ""
     }
   ],
-  "award": [
+  "awards": [
     # Just one example entry
     {
       "name": "",
