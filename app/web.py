@@ -248,10 +248,10 @@ def generate_personal_site(serial_number):
             </section>
             {% endif %}
             
-            {% if project and project|length > 0 %}
+            {% if projects and projects|length > 0 %}
             <section>
                 <h2>Projects</h2>
-                {% for proj in project %}
+                {% for proj in projects %}
                 <div class="project-item">
                     <div class="project-title">{{ proj.title }}</div>
                     <div class="project-role">{{ proj.projectRole }}</div>
@@ -383,7 +383,7 @@ def generate_personal_site(serial_number):
             "error": "An error occurred while generating the personal site. Please try again later."
         }), 500
 
-@web.route('/web/serve_site/<subdomain>', methods=['GET'])
+@web.route('/web/serve_site/<subdomain>', methods=['GET']) # ttMark2
 def serve_site(subdomain):
     """Serve a user's website by subdomain.
     

@@ -38,7 +38,7 @@ def generate_unique_subdomain(user_id, username):
 
 def get_site_url(subdomain):
     """Get the full URL for a user's site."""
-    return f"https://{subdomain}.resume.mintmelon.ca"
+    return f"https://{subdomain}.resume.mintmelon.ca" # ttMark1  how this works? what will nginx do?
 
 def is_valid_subdomain(subdomain):
     """Validate if a subdomain meets requirements."""
