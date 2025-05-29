@@ -19,11 +19,8 @@ def index():
     return "Flask App is Running!"
 
 @api.route('/api/pdfupload', methods=['POST'])
-@token_required
 def upload_pdf():
     """Upload PDF and process resume"""
-    # Now we can access user info from request.user
-    user_id = request.user.get('user_id')
     
     # Validate request
     error, status_code = PDFValidator.validate_upload_request(request)
@@ -53,12 +50,8 @@ def upload_pdf():
         }), 500
 
 @api.route('/api/job_description_upload', methods=['POST'])
-@token_required
 def analyze_with_job():
     """Analyze resume with job description"""
-    # Get user ID from token
-    user_id = request.user.get('user_id')
-    
     # Validate request
     error, status_code, data = JobValidator.validate_request(request)
     if error:
@@ -82,12 +75,8 @@ def analyze_with_job():
         }), 500
 
 @api.route('/api/feedback', methods=['PUT'])
-@token_required
 def process_feedback():
     """Process feedback and updated resume data."""
-    # Get user ID from token
-    user_id = request.user.get('user_id')
-    
     # Validate request
     error, status_code, data = FeedbackValidator.validate_request(request)
     if error:
