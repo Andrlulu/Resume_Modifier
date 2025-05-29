@@ -256,7 +256,7 @@ def get_resume_list():
         
         # Format response
         resume_list = [{
-            "resume_id": resume.id,
+            "resume_id": resume.serial_number,
             "resume_title": resume.title,
             "created_at": resume.created_at.isoformat()
         } for resume in resumes]
